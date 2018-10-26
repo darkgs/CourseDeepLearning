@@ -2,3 +2,6 @@
 */data/*
 */.ipynb_checkpoints/*
 *.tar.gz
+*/2018-21230/*
+*/model_checkpoints/*
+*/coco/*

@@ -211,12 +211,12 @@ def max_pool_forward(x, pool_param):
 
     x_pad = x
 
-    for out_x, input_x in enumerate(range(0, x_pad.shape[2] - pool_width + 1, stride_w)):
-        for out_y, input_y in enumerate(range(0, x_pad.shape[1] - pool_height + 1, stride_h)):
-            # (WH*WW, C)
-            max_ = np.max(np.reshape(x_pad[:, input_y:input_y+pool_height, input_x:input_x+pool_width, :], (x_pad.shape[0], -1, x_pad.shape[3])), axis=1, keepdims=True)
-            out[:, out_y, out_x, :] = np.squeeze(max_, axis=1)
-
+#    for out_x, input_x in enumerate(range(0, x_pad.shape[2] - pool_width + 1, stride_w)):
+#        for out_y, input_y in enumerate(range(0, x_pad.shape[1] - pool_height + 1, stride_h)):
+#            # (WH*WW, C)
+#            max_ = np.max(np.reshape(x_pad[:, input_y:input_y+pool_height, input_x:input_x+pool_width, :], (x_pad.shape[0], -1, x_pad.shape[3])), axis=1, keepdims=True)
+#            out[:, out_y, out_x, :] = np.squeeze(max_, axis=1)
+#
     out = np.zeros([batch_size, output_height, output_width, input_channel], dtype=x.dtype)
     for b in range(batch_size):
         for c in range(input_channel):
@@ -270,19 +270,19 @@ def max_pool_backward(dout, cache):
     output_height = int((input_height - pool_height)/stride_h) + 1
     output_width = int((input_width - pool_width)/stride_w) + 1
 
-    dx = np.zeros(x.shape)
-
-    for out_x, input_x in enumerate(range(0, x.shape[2] - pool_width + 1, stride_w)):
-        for out_y, input_y in enumerate(range(0, x.shape[1] - pool_height + 1, stride_h)):
-            # (WH*WW, C)
-            x_part = np.reshape(x[:, input_y:input_y+pool_height, input_x:input_x+pool_width, :], (x.shape[0], -1, x.shape[3]))
-            max_indices = np.argmax(x_part, axis=1)
-            for b in range(x_part.shape[0]):
-                for c in range(x_part.shape[2]):
-                    h_axis = (max_indices[b][c] // input_height) + input_y
-                    w_axis = (max_indices[b][c] % input_height) + input_x
-                    dx[b][h_axis][w_axis][c] += dout[b][out_y][out_x][c]
-
+#    dx = np.zeros(x.shape)
+#
+#    for out_x, input_x in enumerate(range(0, x.shape[2] - pool_width + 1, stride_w)):
+#        for out_y, input_y in enumerate(range(0, x.shape[1] - pool_height + 1, stride_h)):
+#            # (WH*WW, C)
+#            x_part = np.reshape(x[:, input_y:input_y+pool_height, input_x:input_x+pool_width, :], (x.shape[0], -1, x.shape[3]))
+#            max_indices = np.argmax(x_part, axis=1)
+#            for b in range(x_part.shape[0]):
+#                for c in range(x_part.shape[2]):
+#                    h_axis = (max_indices[b][c] // input_height) + input_y
+#                    w_axis = (max_indices[b][c] % input_height) + input_x
+#                    dx[b][h_axis][w_axis][c] += dout[b][out_y][out_x][c]
+#
     dx = np.zeros(x.shape)
 
     for b in range(batch_size):

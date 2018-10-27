@@ -294,11 +294,12 @@ def part_2(gpu_num):
 
     train(img_features, captions) 
 
-def part_3():
+def part_3(gpu_num):
     # for TensorFlow vram efficiency: if this is not specified, the model hogs all the VRAM even if it's not necessary
     # bad & greedy TF! but it has a reason for this design choice FWIW, try googling it if interested
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
+    conf = tf.ConfigProto()
+    conf.gpu_options.allow_growth = True
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
 
     # argparsing
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -329,7 +330,7 @@ def part_3():
     # Optimization
     parser.add_argument('--seq_length', type=int, default=500,
                                 help='RNN sequence length. Number of timesteps to unroll for.')
-    parser.add_argument('--batch_size', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=128,
                                 help="""minibatch size. Number of sequences propagated through the network in parallel.
                                         Pick batch-sizes to fully leverage the GPU (e.g. until the memory is filled up)
                                         commonly in the range 10-500.""")
@@ -350,6 +351,32 @@ def part_3():
     # https://stackoverflow.com/questions/30656777/how-to-call-module-written-with-argparse-in-ipython-notebook
     sys.argv = ['-f']
     args = parser.parse_args()
+
+    if gpu_num == '0':
+        args.save_idr = 'models_char_rnn_{}'.format(gpu_num)
+        args.rnn_size = 128
+        args.num_layers = 3
+        args.decay_rate = 0.99
+        args.output_keep_prob = 0.1
+        args.input_keep_prob = 0.1
+    elif gpu_num == '1':
+        args.rnn_size = 256
+        args.num_layers = 3
+        args.decay_rate = 0.99
+        args.output_keep_prob = 0.1
+        args.input_keep_prob = 0.1
+    elif gpu_num == '2':
+        args.rnn_size = 486
+        args.num_layers = 3
+        args.decay_rate = 0.99
+        args.output_keep_prob = 0.1
+        args.input_keep_prob = 0.1
+    elif gpu_num == '3':
+        args.rnn_size = 618
+        args.num_layers = 3
+        args.decay_rate = 0.99
+        args.output_keep_prob = 0.1
+        args.input_keep_prob = 0.1
 
     # protip: always check the data and poke around the data yourself
     # you will get a lot of insights by looking at the data
@@ -398,7 +425,7 @@ def part_3():
         model = Model(args)
         print("model built! starting training...")
 
-        with tf.Session() as sess:
+        with tf.Session(config=conf) as sess:
             sess.run(tf.global_variables_initializer())
             saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
             # restore model
@@ -436,11 +463,51 @@ def part_3():
 
     train(args)
 
+
+def part_3_sample(gpu_num):
+    conf = tf.ConfigProto()
+    conf.gpu_options.allow_growth = True
+    os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
+
+    tf.reset_default_graph()
+
+    def sample_eval(args):
+        with open(os.path.join(args.save_dir, 'config.pkl'), 'rb') as f:
+            saved_args = cPickle.load(f)
+        with open(os.path.join(args.save_dir, 'chars_vocab.pkl'), 'rb') as f:
+            chars, vocab = cPickle.load(f)
+        #Use most frequent char if no prime is given
+        if args.prime == '':
+            args.prime = chars[0]
+        model = Model(saved_args, training=False)
+
+        with tf.Session(config=conf) as sess:
+            tf.global_variables_initializer().run()
+            saver = tf.train.Saver(tf.global_variables())
+            ckpt = tf.train.get_checkpoint_state(args.save_dir)
+            if ckpt and ckpt.model_checkpoint_path:
+                saver.restore(sess, ckpt.model_checkpoint_path)
+                print(str(model.sample(sess, chars, vocab, args.n, args.prime)),'utf-8')
+
+    parser_sample = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sample.add_argument('--save_dir', type=str, default='models_char_rnn',
+            help='model directory to store checkpointed models')
+    parser_sample.add_argument('-n', type=int, default=500,
+            help='number of characters to sample')
+    parser_sample.add_argument('--prime', type=text_type, default=u'',
+            help='prime text')
+    sys.argv = ['-f']
+
+    args_sample = parser_sample.parse_args()
+    sample_eval(args_sample)
+
+
 def main():
     options, args = parser.parse_args()
     gpu_num = options.gpu_num
 
-    part_3()
+    part_3(gpu_num)
+    part_3_sample(gpu_num)
 
 if __name__ == '__main__':
     main()

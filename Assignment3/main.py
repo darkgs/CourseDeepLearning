@@ -402,26 +402,27 @@ def part_3(gpu_num):
         print("vocabulary size: " + str(args.vocab_size))
 
         # check compatibility if training is continued from previously saved model
+        init_from = args.init_from
         if not os.path.isdir(args.init_from):
-            args.init_from = None
+            init_from = None
 
-        if args.init_from is not None:
+        if init_from is not None:
             # check if all necessary files exist
-            assert os.path.isdir(args.init_from)," %s must be a a path" % args.init_from
-            assert os.path.isfile(os.path.join(args.init_from,"config.pkl")),"config.pkl file does not exist in path %s"%args.init_from
-            assert os.path.isfile(os.path.join(args.init_from,"chars_vocab.pkl")),"chars_vocab.pkl.pkl file does not exist in path %s" % args.init_from
-            ckpt = tf.train.latest_checkpoint(args.init_from)
+            assert os.path.isdir(init_from)," %s must be a a path" % init_from
+            assert os.path.isfile(os.path.join(init_from,"config.pkl")),"config.pkl file does not exist in path %s"%init_from
+            assert os.path.isfile(os.path.join(init_from,"chars_vocab.pkl")),"chars_vocab.pkl.pkl file does not exist in path %s" % init_from
+            ckpt = tf.train.latest_checkpoint(init_from)
             assert ckpt, "No checkpoint found"
 
             # open old config and check if models are compatible
-            with open(os.path.join(args.init_from, 'config.pkl'), 'rb') as f:
+            with open(os.path.join(init_from, 'config.pkl'), 'rb') as f:
                 saved_model_args = cPickle.load(f)
             need_be_same = ["model", "rnn_size", "num_layers", "seq_length"]
             for checkme in need_be_same:
                 assert vars(saved_model_args)[checkme]==vars(args)[checkme],"Command line argument and saved model disagree on '%s' "%checkme
 
             # open saved vocab/dict and check if vocabs/dicts are compatible
-            with open(os.path.join(args.init_from, 'chars_vocab.pkl'), 'rb') as f:
+            with open(os.path.join(init_from, 'chars_vocab.pkl'), 'rb') as f:
                 saved_chars, saved_vocab = cPickle.load(f)
             assert saved_chars==data_loader.chars, "Data and loaded model disagree on character set!"
             assert saved_vocab==data_loader.vocab, "Data and loaded model disagree on dictionary mappings!"
@@ -443,7 +444,7 @@ def part_3(gpu_num):
             sess.run(tf.global_variables_initializer())
             saver = tf.train.Saver(tf.global_variables(), max_to_keep=1)
             # restore model
-            if args.init_from is not None:
+            if init_from is not None:
                 saver.restore(sess, ckpt)
             for e in range(args.num_epochs):
                 sess.run(tf.assign(model.lr, args.learning_rate * (args.decay_rate ** e)))

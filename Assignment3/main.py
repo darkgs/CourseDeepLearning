@@ -402,6 +402,9 @@ def part_3(gpu_num):
         print("vocabulary size: " + str(args.vocab_size))
 
         # check compatibility if training is continued from previously saved model
+        if not os.path.isdir(args.init_from):
+            args.init_from = None
+
         if args.init_from is not None:
             # check if all necessary files exist
             assert os.path.isdir(args.init_from)," %s must be a a path" % args.init_from

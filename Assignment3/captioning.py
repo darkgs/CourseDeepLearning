@@ -9,14 +9,14 @@ import numpy as np
 
 
 class Captioning():
-    def __init__(self, img_feature_dim, max_seq_len, n_words):
+    def __init__(self, img_feature_dim, max_seq_len, n_words, rnn_hidden_dim, num_of_layers):
 
         self._config = {
             'img_feature_dim': img_feature_dim,
             'max_seq_len': max_seq_len,
             'n_words': n_words,
-            'rnn_hidden_dim': 486,
-            'num_of_layers': 4,
+            'rnn_hidden_dim': rnn_hidden_dim,
+            'num_of_layers': num_of_layers,
             'word_embed_dim': 512,
         }
 

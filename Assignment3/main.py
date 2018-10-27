@@ -32,6 +32,11 @@ from captioning import *
 # the task is implementing the CharRNN inside the class definition from this file
 from char_rnn import Model
 
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option('-g', '--gpu_num', dest='gpu_num', type='string', default='0')
+
 
 def part_1():
     # implement rnn_step_forward
@@ -91,7 +96,7 @@ def part_1():
     print('db error: ', rel_error(db_num, db))
 
 
-def part_2():
+def part_2(gpu_num):
 
     model_path='./models_captioning'
     data_path ='./coco/coco_captioning'
@@ -106,7 +111,8 @@ def part_2():
         else:
             print(k, type(v), len(v))
 
-    train_data = load_coco_data(base_dir=data_path, max_train=512*100)
+#train_data = load_coco_data(base_dir=data_path, max_train=512*100)
+    train_data = data
 
     captions = train_data['train_captions']
     img_idx  = train_data['train_image_idxs']
@@ -144,7 +150,7 @@ def part_2():
 
         conf = tf.ConfigProto()
         conf.gpu_options.per_process_gpu_memory_fraction = 0.2
-        os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
 
         def calc_caption_length(caption):
             for i, word_idx in enumerate(caption):
@@ -162,13 +168,20 @@ def part_2():
 
         tf.reset_default_graph()
 
-        captioning = Captioning(img_feature_dim, maxlen, n_words, batch_size)
+        if gpu_num == '0':
+            captioning = Captioning(img_feature_dim, maxlen, n_words, 128, 3)
+        elif gpu_num == '1':
+            captioning = Captioning(img_feature_dim, maxlen, n_words, 848, 3)
+        elif gpu_num == '2':
+            captioning = Captioning(img_feature_dim, maxlen, n_words, 496, 3)
+        elif gpu_num == '3':
+            captioning = Captioning(img_feature_dim, maxlen, n_words, 612, 3)
         input_sequences, input_sequence_lens, input_img_features, \
             loss, optimize, drop_out_keep_rate, teacher_force = captioning.build_model()
         predict_indices = captioning.predict()
 
         # Saver
-        saved_model_path = 'saved_model/ass3_show_and_tell.ckpt'
+        saved_model_path = 'saved_model_{}/ass3_show_and_tell.ckpt'.format(gpu_num)
         epoch_save_path = 'saved_model/ass3_epoch.txt'
         min_valid_loss = 9999.99
         saver = tf.train.Saver()
@@ -233,6 +246,37 @@ def part_2():
                 pred_indices = sess.run([predict_indices], feed_dict=feed_dict)
                 print([idx_to_word[idx] for idx in pred_indices[0][0]])
 
+                # BLEU score
+                def image_captioning(features) :
+                    pr_captions = np.zeros((features.shape[0],maxlen),int)
+                    feed_dict = {
+                        input_img_features: features,
+                    }
+                    predicts = sess.run([predict_indices], feed_dict=feed_dict)
+                    pr_captions = np.array(predicts[0])
+                    return pr_captions
+
+                def evaluate_model(data, split):
+                    BLEUscores = {}
+
+                    minibatch = sample_coco_minibatch(data, split=split, batch_size="All")
+                    gt_captions, features, urls = minibatch
+                    gt_captions = decode_captions(gt_captions, data['idx_to_word'])
+
+                    pr_captions = image_captioning(features)
+                    pr_captions = decode_captions(pr_captions, data['idx_to_word'])
+
+                    total_score = 0.0
+                    
+                    for gt_caption, pr_caption, url in zip(gt_captions, pr_captions, urls):
+                        total_score += BLEU_score(gt_caption, pr_caption)
+
+                    BLEUscores[split] = total_score / len(pr_captions)
+
+                    for split in BLEUscores:
+                        print('Average BLEU score for %s: %f' % (split, BLEUscores[split]))
+                evaluate_model(train_data,'val')
+        
                 cur_valid_loss = val_loss_sum / val_steps
                 if min_valid_loss > cur_valid_loss:
                     min_valid_loss = cur_valid_loss
@@ -394,7 +438,9 @@ def part_3():
     train(args)
 
 def main():
-    part_2()
+    options, args = parser.parse_args()
+    gpu_num = options.gpu_num
+    part_2(gpu_num)
 
 if __name__ == '__main__':
     main()

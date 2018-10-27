@@ -169,7 +169,7 @@ def part_2(gpu_num):
         tf.reset_default_graph()
 
         if gpu_num == '0':
-            captioning = Captioning(img_feature_dim, maxlen, n_words, 128, 3)
+            captioning = Captioning(img_feature_dim, maxlen, n_words, 386, 3)
         elif gpu_num == '1':
             captioning = Captioning(img_feature_dim, maxlen, n_words, 848, 3)
         elif gpu_num == '2':
@@ -184,6 +184,7 @@ def part_2(gpu_num):
         saved_model_path = 'saved_model_{}/ass3_show_and_tell.ckpt'.format(gpu_num)
         epoch_save_path = 'saved_model/ass3_epoch.txt'
         min_valid_loss = 9999.99
+        max_BLEU = -1.0
         saver = tf.train.Saver()
         with tf.Session(config=conf) as sess:
             sess.run(tf.global_variables_initializer())
@@ -221,22 +222,18 @@ def part_2(gpu_num):
                 # validation
                 val_loss_sum = 0.0
                 val_data_size = vcaptions.shape[0]
-                val_steps = val_data_size // batch_size
-                for step in range(val_steps):
-                    input_seqs, input_seq_lens, input_imgs = generate_minibatch_valid(val_data_size)
-                    feed_dict = {
-                        input_sequences: input_seqs,
-                        input_sequence_lens: input_seq_lens,
-                        input_img_features: input_imgs,
-                    }      
-                    val_loss, val_force = sess.run([loss, teacher_force], feed_dict=feed_dict)
-                    val_loss_sum += val_loss
+#                val_steps = val_data_size // batch_size
+#                for step in range(val_steps):
+#                    input_seqs, input_seq_lens, input_imgs = generate_minibatch_valid(val_data_size)
+#                    feed_dict = {
+#                        input_sequences: input_seqs,
+#                        input_sequence_lens: input_seq_lens,
+#                        input_img_features: input_imgs,
+#                    }      
+#                    val_loss, val_force = sess.run([loss, teacher_force], feed_dict=feed_dict)
+#                    val_loss_sum += val_loss
 
-                print('epoch {} : '.format(epoch) + ('train loss %.4f, ' % (loss_sum / steps)) + \
-                        ('valid loss %.4f' % (val_loss_sum / val_steps)))
 
-                print([idx_to_word[idx] for idx in train_force[0]])
-                print([idx_to_word[idx] for idx in val_force[0]])
                 # test sentence from validation
                 pick_idx = random.randrange(val_data_size)
                 feed_dict = {
@@ -273,17 +270,19 @@ def part_2(gpu_num):
 
                     BLEUscores[split] = total_score / len(pr_captions)
 
-                    for split in BLEUscores:
-                        print('Average BLEU score for %s: %f' % (split, BLEUscores[split]))
-                evaluate_model(train_data,'val')
+                    return BLEUscores[split]
+
+                cur_BLEU = evaluate_model(train_data, 'val')
+
+                print('epoch {} : '.format(epoch) + ('train loss %.4f, ' % (loss_sum / steps)) + \
+                        ('BLEU score %.4f' % cur_BLEU))
         
-                cur_valid_loss = val_loss_sum / val_steps
-                if min_valid_loss > cur_valid_loss:
-                    min_valid_loss = cur_valid_loss
+                if cur_BLEU > max_BLEU:
+                    max_BLEU = cur_BLEU
                     saver.save(sess, saved_model_path)
                     print('model saved!!')
 
-                if min_valid_loss * 1.1 < cur_valid_loss:
+                if (epoch > 4) and (max_BLEU * 0.9) > cur_BLEU:
                     print('early stop!!')
                     break
 

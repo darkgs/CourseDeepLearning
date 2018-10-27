@@ -353,26 +353,31 @@ def part_3(gpu_num):
     args = parser.parse_args()
 
     if gpu_num == '0':
-        args.save_idr = 'models_char_rnn_{}'.format(gpu_num)
+        args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
+        args.rnn_size = 96
+        args.num_layers = 4
+        args.decay_rate = 0.97
+        args.output_keep_prob = 0.1
+        args.input_keep_prob = 0.1
+        args.grad_clip = 5.0
+        args.num_epochs = 5
+    elif gpu_num == '1':
+        args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
         args.rnn_size = 128
         args.num_layers = 3
         args.decay_rate = 0.99
         args.output_keep_prob = 0.1
         args.input_keep_prob = 0.1
-    elif gpu_num == '1':
-        args.rnn_size = 256
-        args.num_layers = 3
-        args.decay_rate = 0.99
-        args.output_keep_prob = 0.1
-        args.input_keep_prob = 0.1
     elif gpu_num == '2':
-        args.rnn_size = 486
+        args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
+        args.rnn_size = 312
         args.num_layers = 3
         args.decay_rate = 0.99
         args.output_keep_prob = 0.1
         args.input_keep_prob = 0.1
     elif gpu_num == '3':
-        args.rnn_size = 618
+        args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
+        args.rnn_size = 396
         args.num_layers = 3
         args.decay_rate = 0.99
         args.output_keep_prob = 0.1
@@ -383,9 +388,7 @@ def part_3(gpu_num):
     data_loader = TextLoader(args.data_dir, args.batch_size, args.seq_length)
     data_loader.reset_batch_pointer()
 
-    x, y = data_loader.next_batch()
-
-# training loop definition
+    # training loop definition
     def train(args):
         data_loader = TextLoader(args.data_dir, args.batch_size, args.seq_length)
         args.vocab_size = data_loader.vocab_size
@@ -461,7 +464,11 @@ def part_3(gpu_num):
                         saver.save(sess, checkpoint_path, global_step=e * data_loader.num_batches + b)
                         print("model saved to {}".format(checkpoint_path))
 
-    train(args)
+    for i in range(10):
+        train(args)
+        print('==============================={}==================================='.format(i))
+        part_3_sample(gpu_num)
+        print('====================================================================')
 
 
 def part_3_sample(gpu_num):
@@ -499,6 +506,8 @@ def part_3_sample(gpu_num):
     sys.argv = ['-f']
 
     args_sample = parser_sample.parse_args()
+    args_sample.save_dir = 'models_char_rnn_{}'.format(gpu_num)
+
     sample_eval(args_sample)
 
 
@@ -507,7 +516,6 @@ def main():
     gpu_num = options.gpu_num
 
     part_3(gpu_num)
-    part_3_sample(gpu_num)
 
 if __name__ == '__main__':
     main()

@@ -355,8 +355,8 @@ def part_3(gpu_num):
     if gpu_num == '0':
         args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
         args.rnn_size = 96
-        args.num_layers = 4
-        args.decay_rate = 0.97
+        args.num_layers = 3
+        args.decay_rate = 0.99
         args.output_keep_prob = 0.1
         args.input_keep_prob = 0.1
         args.grad_clip = 5.0
@@ -368,6 +368,7 @@ def part_3(gpu_num):
         args.decay_rate = 0.99
         args.output_keep_prob = 0.1
         args.input_keep_prob = 0.1
+        args.num_epochs = 5
     elif gpu_num == '2':
         args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
         args.rnn_size = 312
@@ -375,6 +376,7 @@ def part_3(gpu_num):
         args.decay_rate = 0.99
         args.output_keep_prob = 0.1
         args.input_keep_prob = 0.1
+        args.num_epochs = 5
     elif gpu_num == '3':
         args.save_dir = 'models_char_rnn_{}'.format(gpu_num)
         args.rnn_size = 396
@@ -382,6 +384,7 @@ def part_3(gpu_num):
         args.decay_rate = 0.99
         args.output_keep_prob = 0.1
         args.input_keep_prob = 0.1
+        args.num_epochs = 5
 
     # protip: always check the data and poke around the data yourself
     # you will get a lot of insights by looking at the data

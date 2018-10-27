@@ -324,12 +324,12 @@ def part_3():
                                 help='lstm, rnn, gru, or nas')
     parser.add_argument('--rnn_size', type=int, default=128,
                                 help='size of RNN hidden state')
-    parser.add_argument('--num_layers', type=int, default=5,
+    parser.add_argument('--num_layers', type=int, default=3,
                                 help='number of layers in the RNN')
     # Optimization
     parser.add_argument('--seq_length', type=int, default=500,
                                 help='RNN sequence length. Number of timesteps to unroll for.')
-    parser.add_argument('--batch_size', type=int, default=5,
+    parser.add_argument('--batch_size', type=int, default=64,
                                 help="""minibatch size. Number of sequences propagated through the network in parallel.
                                         Pick batch-sizes to fully leverage the GPU (e.g. until the memory is filled up)
                                         commonly in the range 10-500.""")
@@ -337,9 +337,9 @@ def part_3():
                                 help='number of epochs. Number of full passes through the training examples.')
     parser.add_argument('--grad_clip', type=float, default=20.,
                                 help='clip gradients at this value')
-    parser.add_argument('--learning_rate', type=float, default=0.01,
+    parser.add_argument('--learning_rate', type=float, default=0.001,
                                 help='learning rate')
-    parser.add_argument('--decay_rate', type=float, default=0.7,
+    parser.add_argument('--decay_rate', type=float, default=0.97,
                                 help='decay rate for rmsprop')
     parser.add_argument('--output_keep_prob', type=float, default=0.1,
                                 help='probability of keeping weights in the hidden layer')
@@ -405,7 +405,7 @@ def part_3():
             if args.init_from is not None:
                 saver.restore(sess, ckpt)
             for e in range(args.num_epochs):
-                sess.run(tf.assign(model.lr, args.learning_rate * (args.decay_rate ** (e/args.num_epochs))))
+                sess.run(tf.assign(model.lr, args.learning_rate * (args.decay_rate ** e)))
                 data_loader.reset_batch_pointer()
                 state = sess.run(model.initial_state)
                                         
@@ -439,7 +439,8 @@ def part_3():
 def main():
     options, args = parser.parse_args()
     gpu_num = options.gpu_num
-    part_2(gpu_num)
+
+    part_3()
 
 if __name__ == '__main__':
     main()

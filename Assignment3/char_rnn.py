@@ -45,6 +45,58 @@ class Model():
         self.probs = None
         self.cell = None
 
+        ####################################
+        # input/target data (int32 since input is char-level)
+        self.input_data = tf.placeholder(tf.int32, [-1, args.seq_length])
+        self.targets = tf.placeholder(tf.int32, [-1, args.seq_length])
+        self.input_keep_prob = tf.placeholder(tf.float32, ())
+        self.output_keep_prob = tf.placeholder(tf.float32, ())
+
+        # warp multi layered rnn cell into one cell with dropout
+        # choose different rnn cell
+        if args.model == 'rnn':
+            cell_fn = rnn.RNNCell
+        elif args.model == 'gru':
+            cell_fn = rnn.GRUCell
+        elif args.model == 'lstm':
+            cell_fn = rnn.LSTMCell
+        elif args.model == 'nas':
+            cell_fn = rnn.NASCell
+        else:
+            raise Exception("model type not supported: {}".format(args.model))
+
+        cells = []
+        for _ in range(args.num_layers):
+            cell = cell_fn(args.rnn_size)
+            cell = rnn.DropoutWrapper(cell,
+                        input_keep_prob=self.input_keep_prob,
+                        output_keep_prob=self.output_keep_prob)
+            cells.append(cell)
+        self.cell = rnn.MultiRNNCell(cells, state_is_tuple=True)
+
+        self.initial_state = tuple([tf.nn.rnn_cell.LSTMStateTuple(
+                tf.matmul(self.input_data, tf.zeros((self.input_data[1], args.rnn_size))),
+                tf.matmul(self.input_data, tf.zeros((self.input_data[1], args.rnn_size)))) \
+                for _ in range(num_of_layers)])
+
+        # softmax output layer, use softmax to classify
+        with tf.variable_scope('rnnlm'):
+            softmax_w = tf.get_variable("softmax_w", [args.rnn_size, args.vocab_size])
+            softmax_b = tf.get_variable("softmax_b", [args.vocab_size])
+        
+        # transform input to embedding
+        embedding = tf.get_variable("embedding", [args.vocab_size, args.rnn_size])
+        inputs = tf.nn.embedding_lookup(embedding, self.input_data)
+        inputs = tf.nn.dropout(inputs, self.output_keep_prob)
+
+        # unstack the input to fits in rnn model
+        inputs = tf.split(inputs, args.seq_length, 1)
+        inputs = [tf.squeeze(input_, [1]) for input_ in inputs] 
+
+        # dropout beta testing: double check which one should affect next line
+
+        ####################################
+
     def sample(self, sess, chars, vocab, num=200, prime='The '):
         """
         implement your sampling method from here: give a model an ability to spit out characters from RNN's hidden state.

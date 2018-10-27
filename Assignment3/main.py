@@ -428,6 +428,7 @@ def part_3(gpu_num):
                                                                         
         print("building the model... may take some time...")
         ##################### This line builds the CharRNN model defined in char_rnn.py #####################
+        tf.reset_default_graph()
         model = Model(args)
         print("model built! starting training...")
 
@@ -479,8 +480,6 @@ def part_3_sample(gpu_num):
     conf.gpu_options.allow_growth = True
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_num
 
-    tf.reset_default_graph()
-
     def sample_eval(args):
         with open(os.path.join(args.save_dir, 'config.pkl'), 'rb') as f:
             saved_args = cPickle.load(f)
@@ -489,6 +488,7 @@ def part_3_sample(gpu_num):
         #Use most frequent char if no prime is given
         if args.prime == '':
             args.prime = chars[0]
+        tf.reset_default_graph()
         model = Model(saved_args, training=False)
 
         with tf.Session(config=conf) as sess:

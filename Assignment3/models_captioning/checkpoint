@@ -1,2 +1,2 @@
-model_checkpoint_path: "model"
-all_model_checkpoint_paths: "model"
+model_checkpoint_path: "ass3_show_and_tell.ckpt"
+all_model_checkpoint_paths: "ass3_show_and_tell.ckpt"

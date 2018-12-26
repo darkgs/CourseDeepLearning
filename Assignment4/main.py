@@ -63,9 +63,9 @@ save_dir = 'models_seqgan'
 
 ###
 BATCH_SIZE = 128
-SEQ_LENGTH = 20
-EMB_DIM = 32
-HIDDEN_DIM = 32
+SEQ_LENGTH = 40
+EMB_DIM = 96
+HIDDEN_DIM = 64
 START_TOKEN = 0
 PRE_EPOCH_NUM = 120
 #PRE_EPOCH_NUM = 1
@@ -73,12 +73,12 @@ PRE_EPOCH_NUM = 120
 ###
 dis_epoch_num = 50
 #dis_epoch_num = 1
-dis_embedding_dim = 64
+dis_embedding_dim = 128
 dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
 dis_num_filters = [100, 200, 200, 200, 200, 100, 100, 100, 100, 100, 160, 160]
 dis_dropout_keep_prob = 0.75
 dis_l2_reg_lambda = 0.2
-dis_batch_size = 64
+dis_batch_size = 128
 
 ###
 TOTAL_BATCH = 200

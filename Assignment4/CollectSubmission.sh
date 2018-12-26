@@ -1,6 +1,10 @@
 files="Assignment4_1.ipynb
 Assignment4_2.ipynb
-Assignment4_3.ipynb"
+Assignment4_3.ipynb
+utils.py
+discriminator.py
+generator.py
+rollout.py"
 
 for file in $files
 do
@@ -18,4 +22,4 @@ fi
 
 
 rm -f $1.zip
-zip -r $1.zip ./*.ipynb 
+zip -r $1.zip $files
